@@ -263,6 +263,9 @@ var types = (function () {
     types.custom = function () {
         return scalarType();
     };
+    types.or = function (_t, _u) {
+        return scalarType();
+    };
     types.optional = types;
     return types;
 }());

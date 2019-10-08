@@ -9,6 +9,7 @@ export declare class types {
     static constant<T extends string>(_c: T): T;
     static oneOf<T extends {}>(_e: T): ValueOf<T>;
     static custom<T>(): T;
+    static or<T, U>(_t: T, _u: U): T | U;
     static optional: {
         number?: number;
         string?: string;
@@ -16,6 +17,7 @@ export declare class types {
         constant: <T extends string>(_c: T) => T | undefined;
         oneOf: <T extends {}>(_e: T) => (ValueOf<T>) | undefined;
         custom: <T>() => T | undefined;
+        or: <T, U>(_t: T, _u: U) => T | U | undefined;
     };
 }
 export {};
