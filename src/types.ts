@@ -60,7 +60,17 @@ export class types {
   }
 
   static or<T, U>(_t: T, _u: U): T | U {
-    return scalarType()
+    const tIsNonScalar = Object.getOwnPropertyNames(_t).indexOf('__non_scalar') !== -1
+    const uIsNonScalar = Object.getOwnPropertyNames(_u).indexOf('__non_scalar') !== -1
+    if (tIsNonScalar && uIsNonScalar) {
+      throw new Error('Two non scalars not supported!')
+    }
+
+    return tIsNonScalar ? _t : uIsNonScalar ? _u : scalarType()
+  }
+
+  static nonScalar<T>(_t: T): T {
+    return { __non_scalar: _t } as any
   }
 
   static optional: {

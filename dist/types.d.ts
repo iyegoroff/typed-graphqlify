@@ -10,6 +10,7 @@ export declare class types {
     static oneOf<T extends {}>(_e: T): ValueOf<T>;
     static custom<T>(): T;
     static or<T, U>(_t: T, _u: U): T | U;
+    static nonScalar<T>(_t: T): T;
     static optional: {
         number?: number;
         string?: string;
