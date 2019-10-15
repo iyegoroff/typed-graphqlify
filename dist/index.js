@@ -268,16 +268,12 @@ var types = (function () {
         return scalarType();
     };
     types.or = function (_t, _u) {
-        var tIsNonScalar = Object.getOwnPropertyNames(_t).indexOf('__non_scalar') !== -1;
-        var uIsNonScalar = Object.getOwnPropertyNames(_u).indexOf('__non_scalar') !== -1;
+        var tIsNonScalar = _t !== null && Object.getOwnPropertyNames(_t).indexOf('__non_scalar') !== -1;
+        var uIsNonScalar = _u !== null && Object.getOwnPropertyNames(_u).indexOf('__non_scalar') !== -1;
         if (tIsNonScalar && uIsNonScalar) {
             throw new Error('Two non scalars not supported!');
         }
-        return tIsNonScalar
-            ? _t
-            : uIsNonScalar
-                ? _u
-                : scalarType();
+        return tIsNonScalar ? _t : uIsNonScalar ? _u : scalarType();
     };
     types.nonScalar = function (_t) {
         return { __non_scalar: _t };
