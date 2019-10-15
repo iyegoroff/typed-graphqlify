@@ -273,7 +273,7 @@ var types = (function () {
         if (tIsNonScalar && uIsNonScalar) {
             throw new Error('Two non scalars not supported!');
         }
-        return tIsNonScalar ? _t : uIsNonScalar ? _u : scalarType();
+        return tIsNonScalar ? _t.__non_scalar : uIsNonScalar ? _u.__non_scalar : scalarType();
     };
     types.nonScalar = function (_t) {
         return { __non_scalar: _t };

@@ -68,7 +68,11 @@ export class types {
       throw new Error('Two non scalars not supported!')
     }
 
-    return tIsNonScalar ? _t : uIsNonScalar ? _u : scalarType()
+    return tIsNonScalar
+      ? (_t as any).__non_scalar
+      : uIsNonScalar
+      ? (_u as any).__non_scalar
+      : scalarType()
   }
 
   static nonScalar<T>(_t: T): T {
