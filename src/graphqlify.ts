@@ -31,8 +31,9 @@ export function params<T>(params: Params, input: T): T {
     throw new Error(`Cannot apply params to JS ${typeof params}`)
   }
 
-  ;(input as any)[paramsSymbol] = params
-  return input
+  const result = Array.isArray(input) ? [...input] : { ...input }
+  ;(result as any)[paramsSymbol] = params
+  return result as any
 }
 
 export function alias<T extends string>(alias: T, target: string): T {

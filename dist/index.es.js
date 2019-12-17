@@ -4,8 +4,8 @@ var GraphQLType;
     GraphQLType[GraphQLType["INLINE_FRAGMENT"] = 1] = "INLINE_FRAGMENT";
     GraphQLType[GraphQLType["FRAGMENT"] = 2] = "FRAGMENT";
 })(GraphQLType || (GraphQLType = {}));
-var typeSymbol = Symbol('GraphQL Type');
-var paramsSymbol = Symbol('GraphQL Params');
+const typeSymbol = Symbol('GraphQL Type');
+const paramsSymbol = Symbol('GraphQL Params');
 function isInlineFragmentObject(value) {
     return (typeof value === 'object' &&
         value !== null &&
@@ -22,26 +22,24 @@ function isScalarObject(value) {
 function renderName(name) {
     return name === undefined ? '' : name;
 }
-function renderParams(params, brackets) {
-    if (brackets === void 0) { brackets = true; }
+function renderParams(params, brackets = true) {
     if (!params) {
         return '';
     }
-    var builder = [];
-    for (var _i = 0, _a = Object.entries(params); _i < _a.length; _i++) {
-        var _b = _a[_i], key = _b[0], value = _b[1];
-        var params_1 = void 0;
+    const builder = [];
+    for (const [key, value] of Object.entries(params)) {
+        let params;
         if (typeof value === 'object') {
-            params_1 = "{" + renderParams(value, false) + "}";
+            params = `{${renderParams(value, false)}}`;
         }
         else {
-            params_1 = "" + value;
+            params = `${value}`;
         }
-        builder.push(key + ":" + params_1);
+        builder.push(`${key}:${params}`);
     }
-    var built = builder.join(',');
+    let built = builder.join(',');
     if (brackets) {
-        built = "(" + built + ")";
+        built = `(${built})`;
     }
     return built;
 }
@@ -49,13 +47,13 @@ function renderScalar(name, params) {
     return renderName(name) + renderParams(params);
 }
 function renderInlineFragment(fragment, context) {
-    return "...on " + fragment.typeName + renderObject(undefined, fragment.internal, context);
+    return `...on ${fragment.typeName}${renderObject(undefined, fragment.internal, context)}`;
 }
 function renderFragment(fragment, context) {
-    return "fragment " + fragment.name + " on " + fragment.typeName + renderObject(undefined, fragment.internal, context);
+    return `fragment ${fragment.name} on ${fragment.typeName}${renderObject(undefined, fragment.internal, context)}`;
 }
 function renderArray(name, arr, context) {
-    var first = arr[0];
+    const first = arr[0];
     if (first === undefined || first === null) {
         throw new Error('Cannot render array with no first value');
     }
@@ -68,13 +66,13 @@ function renderType(name, value, context) {
         case 'boolean':
         case 'number':
         case 'string':
-            throw new Error("Rendering type " + typeof value + " directly is disallowed");
+            throw new Error(`Rendering type ${typeof value} directly is disallowed`);
         case 'object':
             if (value === null) {
                 throw new Error('Cannot render null');
             }
             if (isScalarObject(value)) {
-                return renderScalar(name, value[paramsSymbol]) + " ";
+                return `${renderScalar(name, value[paramsSymbol])} `;
             }
             else if (Array.isArray(value)) {
                 return renderArray(name, value, context);
@@ -85,44 +83,41 @@ function renderType(name, value, context) {
         case 'undefined':
             return '';
         default:
-            throw new Error("Cannot render type " + typeof value);
+            throw new Error(`Cannot render type ${typeof value}`);
     }
 }
 function renderObject(name, obj, context) {
-    var fields = [];
-    for (var _i = 0, _a = Object.entries(obj); _i < _a.length; _i++) {
-        var _b = _a[_i], key = _b[0], value = _b[1];
+    const fields = [];
+    for (const [key, value] of Object.entries(obj)) {
         fields.push(renderType(key, value, context));
     }
-    for (var _c = 0, _d = Object.getOwnPropertySymbols(obj); _c < _d.length; _c++) {
-        var sym = _d[_c];
-        var value = obj[sym];
+    for (const sym of Object.getOwnPropertySymbols(obj)) {
+        const value = obj[sym];
         if (isInlineFragmentObject(value)) {
             fields.push(renderInlineFragment(value, context));
         }
         else if (isFragmentObject(value)) {
             context.fragments.set(sym, value);
-            fields.push("..." + value.name);
+            fields.push(`...${value.name}`);
         }
     }
     if (fields.length === 0) {
         throw new Error('Object cannot have no fields');
     }
-    return "" + renderName(name) + renderParams(obj[paramsSymbol]) + "{" + fields.join('').trim() + "}";
+    return `${renderName(name)}${renderParams(obj[paramsSymbol])}{${fields.join('').trim()}}`;
 }
 function render(value) {
-    var context = {
+    const context = {
         fragments: new Map(),
     };
-    var rend = renderObject(undefined, value, context);
-    var rendered = new Map();
-    var executingContext = context;
-    var currentContext = {
+    let rend = renderObject(undefined, value, context);
+    const rendered = new Map();
+    let executingContext = context;
+    let currentContext = {
         fragments: new Map(),
     };
     while (executingContext.fragments.size > 0) {
-        for (var _i = 0, _a = Array.from(executingContext.fragments.entries()); _i < _a.length; _i++) {
-            var _b = _a[_i], sym = _b[0], fragment = _b[1];
+        for (const [sym, fragment] of Array.from(executingContext.fragments.entries())) {
             if (!rendered.has(sym)) {
                 rendered.set(sym, renderFragment(fragment, currentContext));
             }
@@ -141,142 +136,102 @@ function createOperate(operateType) {
             if (!queryObject) {
                 throw new Error('queryObject is not set');
             }
-            return operateType + " " + opNameOrQueryObject + render(queryObject);
+            return `${operateType} ${opNameOrQueryObject}${render(queryObject)}`;
         }
-        return "" + operateType + render(opNameOrQueryObject);
+        return `${operateType}${render(opNameOrQueryObject)}`;
     }
     return operate;
 }
-var query = createOperate('query');
-var mutation = createOperate('mutation');
-var subscription = createOperate('subscription');
+const query = createOperate('query');
+const mutation = createOperate('mutation');
+const subscription = createOperate('subscription');
 function params(params, input) {
     if (typeof params !== 'object') {
         throw new Error('Params have to be an object');
     }
     if (typeof input !== 'object') {
-        throw new Error("Cannot apply params to JS " + typeof params);
+        throw new Error(`Cannot apply params to JS ${typeof params}`);
     }
-    input[paramsSymbol] = params;
-    return input;
+    const result = Array.isArray(input) ? [...input] : Object.assign({}, input);
+    result[paramsSymbol] = params;
+    return result;
 }
 function alias(alias, target) {
-    return alias + ":" + target;
+    return `${alias}:${target}`;
 }
 function fragment(name, typeName, input) {
-    var _a, _b;
-    var fragment = (_a = {},
-        _a[typeSymbol] = GraphQLType.FRAGMENT,
-        _a.name = name,
-        _a.typeName = typeName,
-        _a.internal = input,
-        _a);
-    return _b = {}, _b[Symbol("Fragment(" + name + " on " + typeName + ")")] = fragment, _b;
+    const fragment = {
+        [typeSymbol]: GraphQLType.FRAGMENT,
+        name,
+        typeName,
+        internal: input,
+    };
+    return { [Symbol(`Fragment(${name} on ${typeName})`)]: fragment };
 }
 function rawString(input) {
     return JSON.stringify(input);
 }
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-
 function optional(obj) {
     return obj;
 }
 function on(typeName, internal) {
-    var _a, _b;
-    var fragment = (_a = {},
-        _a[typeSymbol] = GraphQLType.INLINE_FRAGMENT,
-        _a.typeName = typeName,
-        _a.internal = internal,
-        _a);
-    return _b = {}, _b[Symbol("InlineFragment(" + typeName + ")")] = fragment, _b;
+    const fragment = {
+        [typeSymbol]: GraphQLType.INLINE_FRAGMENT,
+        typeName,
+        internal,
+    };
+    return { [Symbol(`InlineFragment(${typeName})`)]: fragment };
 }
 function onUnion(types) {
-    var fragments = {};
-    for (var _i = 0, _a = Object.entries(types); _i < _a.length; _i++) {
-        var _b = _a[_i], typeName = _b[0], internal = _b[1];
-        fragments = __assign(__assign({}, fragments), on(typeName, internal));
+    let fragments = {};
+    for (const [typeName, internal] of Object.entries(types)) {
+        fragments = Object.assign(Object.assign({}, fragments), on(typeName, internal));
     }
     return fragments;
 }
 function scalarType() {
-    var _a;
-    var scalar = (_a = {},
-        _a[typeSymbol] = GraphQLType.SCALAR,
-        _a);
+    const scalar = {
+        [typeSymbol]: GraphQLType.SCALAR,
+    };
     return scalar;
 }
-var types = (function () {
-    function types() {
+class types {
+    static get number() {
+        return scalarType();
     }
-    Object.defineProperty(types, "number", {
-        get: function () {
-            return scalarType();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(types, "string", {
-        get: function () {
-            return scalarType();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(types, "boolean", {
-        get: function () {
-            return scalarType();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    types.constant = function (_c) {
+    static get string() {
         return scalarType();
-    };
-    types.oneOf = function (_e) {
+    }
+    static get boolean() {
         return scalarType();
-    };
-    types.custom = function () {
+    }
+    static constant(_c) {
         return scalarType();
-    };
-    types.or = function (_t, _u) {
-        var tIsNonScalar = _t !== null && Object.getOwnPropertyNames(_t).indexOf('__non_scalar') !== -1;
-        var uIsNonScalar = _u !== null && Object.getOwnPropertyNames(_u).indexOf('__non_scalar') !== -1;
+    }
+    static oneOf(_e) {
+        return scalarType();
+    }
+    static custom() {
+        return scalarType();
+    }
+    static or(_t, _u) {
+        const tIsNonScalar = _t !== null && Object.getOwnPropertyNames(_t).indexOf('__non_scalar') !== -1;
+        const uIsNonScalar = _u !== null && Object.getOwnPropertyNames(_u).indexOf('__non_scalar') !== -1;
         if (tIsNonScalar && uIsNonScalar) {
             throw new Error('Two non scalars not supported!');
         }
-        return tIsNonScalar ? _t.__non_scalar : uIsNonScalar ? _u.__non_scalar : scalarType();
-    };
-    types.nonScalar = function (_t) {
+        return tIsNonScalar
+            ? _t.__non_scalar
+            : uIsNonScalar
+                ? _u.__non_scalar
+                : scalarType();
+    }
+    static nonScalar(_t) {
         return { __non_scalar: _t };
-    };
-    types.optional = types;
-    return types;
-}());
+    }
+}
+types.optional = types;
 
 export { fragment, params, query, mutation, subscription, alias, rawString, types, optional, on, onUnion };
 //# sourceMappingURL=index.es.js.map
